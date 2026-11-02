@@ -13,3 +13,6 @@ venv/
 # Files the code writes while running
 logs/
 results/
+
+# extra local virtual environments
+.venv*/
