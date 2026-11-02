@@ -6,8 +6,8 @@ From Abdullah (Group 2 technical lead) to the new owner, 2026-11-02. Start here.
 
 | Repo | Who uses it | What is in it |
 |---|---|---|
-| **Team repo** (this one) | The team: you, and Groups 4 and 5 for their notebooks | Branches `solutions` (the real code) and `main` (generated with TODOs), plus internal docs: `HANDOVER.md`, `docs/handover/`, `docs/s5_instructor_notes.md`, `docs/dry_run_log_template.md` |
-| **Student repo** | Participants, through the Colab link | The same two branches **without** those internal files. Never edit it by hand |
+| **Team repo** (this one): https://github.com/1Baleid/tuwaiq-agent-team | The team: you, and Groups 4 and 5 for their notebooks | Branches `solutions` (the real code) and `main` (generated with TODOs), plus internal docs: `HANDOVER.md`, `docs/handover/`, `docs/s5_instructor_notes.md`, `docs/dry_run_log_template.md` |
+| **Student repo**: https://github.com/1Baleid/tuwaiq-agent-workshop | Participants, through the Colab link | The same two branches **without** those internal files. Never edit it by hand |
 
 **Updating what students get:**
 1. Edit and commit on `solutions`.

@@ -35,7 +35,7 @@ If Groq has problems on the day, we switch to Google. This key is the backup.
 
 ## Step 3: Open the workshop notebook (about 3 minutes)
 
-1. Open this link: **[COLAB LINK: the organizers will paste it here]**
+1. Open this link: **https://colab.research.google.com/github/1Baleid/tuwaiq-agent-workshop/blob/main/notebooks/00_setup.ipynb**
 2. Look at the round picture at the top right of Colab: it must be your **personal Gmail**. If it is not, click it and switch account.
 
 ## Step 4: Put your keys in Colab "Secrets" (about 5 minutes)
