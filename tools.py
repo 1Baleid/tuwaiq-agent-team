@@ -67,15 +67,31 @@ def load_deadlines():
         return {row["name"]: row for row in csv.DictReader(f)}
 
 
+def find_deadline(name, deadlines):
+    """The deadline called `name`, ignoring upper/lower case ("final exams begin" finds
+    "Final exams begin"), or None if there is none."""
+    for known in deadlines:
+        if known.lower() == name.strip().lower():
+            return known
+    return None
+
+
+def parse_date(text):
+    """Read a date written as YYYY-MM-DD, e.g. 2026-11-26."""
+    return datetime.strptime(text, "%Y-%m-%d").date()
+
+
 def get_deadline(name):
     """Find a deadline by name and say how many days are left."""
     deadlines = load_deadlines()
-    # Match ignoring upper/lower case, e.g. "final exams begin" finds "Final exams begin".
-    matches = [known for known in deadlines if known.lower() == name.strip().lower()]
-    if not matches:
+    found = find_deadline(name, deadlines)
+    if found is None:
         return f"No deadline called '{name}'."
-    row = deadlines[matches[0]]
-    day = datetime.strptime(row["date"], "%Y-%m-%d").date()
+    row = deadlines[found]
+    try:
+        day = parse_date(row["date"])
+    except ValueError:
+        return f"The date of '{found}' in deadlines.csv is not a valid YYYY-MM-DD date."
     days_left = (day - date.today()).days
     note = f" {row['note']}." if row.get("note") else ""
     return f"{row['name']}: {day:%A %d %B %Y} ({days_left} days from today).{note}"

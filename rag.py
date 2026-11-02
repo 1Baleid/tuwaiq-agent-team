@@ -24,21 +24,30 @@ _store = None    # the store get_store() built last
 
 
 # ---------------------------------------------------------------- 1. load
+def read_file(path):
+    """The text of one document, or None if we cannot read this kind of file."""
+    if path.suffix.lower() in (".txt", ".md"):
+        return path.read_text(encoding="utf-8")
+    if path.suffix.lower() == ".pdf":
+        from pypdf import PdfReader
+        return "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+    return None
+
+
 def load_documents(corpus_dir=None):
-    """Read every .txt, .md and .pdf file in <corpus>/docs.
+    """Read every document in <corpus>/docs that read_file() understands (.txt, .md, .pdf).
     Returns a list of {"source": file name, "text": the whole text}."""
     folder = (corpus_dir or config.CORPUS_DIR) / "docs"
-    documents = []
+    documents, skipped = [], []
     for path in sorted(folder.iterdir()):
-        if path.suffix.lower() in (".txt", ".md"):
-            text = path.read_text(encoding="utf-8")
-        elif path.suffix.lower() == ".pdf":
-            from pypdf import PdfReader
-            text = "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+        text = read_file(path)
+        if text is None:
+            skipped.append(path.name)
         else:
-            continue  # skip other files (images, spreadsheets, ...)
-        documents.append({"source": path.name, "text": text})
+            documents.append({"source": path.name, "text": text})
     print(f"Loaded {len(documents)} documents from {folder}")
+    if skipped:
+        print(f"Skipped {len(skipped)} file(s) this loader cannot read: {', '.join(skipped)}")
     return documents
 
 
@@ -108,11 +117,12 @@ def _settings():
     return config.CHUNK_SIZE, config.CHUNK_OVERLAP, config.EMBEDDING_MODEL, str(config.CORPUS_DIR)
 
 
-def get_store():
+def get_store(rebuild=False):
     """The store for the corpus in config.py: built the first time, then reused.
-    It is rebuilt automatically if you change CHUNK_SIZE, CHUNK_OVERLAP, EMBEDDING_MODEL or CORPUS_DIR."""
+    It is rebuilt automatically if you change CHUNK_SIZE, CHUNK_OVERLAP, EMBEDDING_MODEL or CORPUS_DIR,
+    and when you ask for it with rebuild=True (e.g. after changing the documents)."""
     global _store
-    if _store is None or _store["settings"] != _settings():
+    if rebuild or _store is None or _store["settings"] != _settings():
         _store = build_store()
     return _store
 

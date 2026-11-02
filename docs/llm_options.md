@@ -104,6 +104,8 @@ The agent needs one tool-call format that works with **every** provider, includi
   - **Local model:** 40 of 41 confirmed. The other was about vLLM, which we don't use.
   - **Colab:** 38 of 40 confirmed. The other two were about pinning a runtime version, which doesn't affect this comparison. Added from the fact-check: the venue Wi-Fi/DNS check.
   - **Other providers:** 38 of 38 confirmed.
+  - **Latency figures:** 39 of 40 confirmed. The other was a Cerebras limit, already ruled out above.
+  - **FAISS vs ChromaDB (for T3):** 40 of 40 confirmed.
 - **Unofficial figures are labelled as such:** Gemini's current limits and the independent latency benchmarks.
 
 ## Sources (read 2026-11-02)
