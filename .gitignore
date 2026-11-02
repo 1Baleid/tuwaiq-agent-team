@@ -1,0 +1,15 @@
+# Secrets: never commit keys
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# Files the code writes while running
+logs/
+results/
