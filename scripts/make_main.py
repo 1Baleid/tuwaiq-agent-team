@@ -109,10 +109,15 @@ def git(*args, cwd=ROOT):
     return result.stdout.decode("utf-8", errors="replace")
 
 
+def committed(ref, path):
+    """The bytes of `path` as stored in git at `ref` (not the copy on disk)."""
+    return subprocess.run(["git", "show", f"{ref}:{path}"], cwd=ROOT, capture_output=True, check=True).stdout
+
+
 def generate():
     """{path: bytes} for every file of the current commit, converted for `main`."""
-    paths = [p for p in git("ls-files", "-z").split("\0") if p]
-    return {path: main_version(path, (ROOT / path).read_bytes()) for path in paths}
+    paths = [p for p in git("ls-tree", "-r", "--name-only", "-z", "HEAD").split("\0") if p]
+    return {path: main_version(path, committed("HEAD", path)) for path in paths}
 
 
 def check(files):
@@ -123,8 +128,7 @@ def check(files):
         print(f"only on {'main' if path in on_main else 'solutions'}: {path}")
         ok = False
     for path in sorted(on_main & set(files)):
-        committed = subprocess.run(["git", "show", f"main:{path}"], cwd=ROOT, capture_output=True).stdout
-        if committed != files[path]:
+        if committed("main", path) != files[path]:
             print(f"differs: {path}")
             ok = False
     return ok
