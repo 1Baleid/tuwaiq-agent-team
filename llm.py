@@ -23,7 +23,7 @@ def get_api_key(name):
     if name is None:  # local models need no key
         return "not-needed"
     from dotenv import load_dotenv
-    load_dotenv(config.ROOT / ".env")  # copies the lines of .env into os.environ (if the file exists)
+    load_dotenv(config.ROOT / ".env", override=True)  # copies the lines of .env into os.environ (if it exists)
     if os.environ.get(name):
         return os.environ[name]
     if "google.colab" in sys.modules:  # running inside a Colab notebook
@@ -39,12 +39,12 @@ def get_api_key(name):
 def get_client():
     """The OpenAI-compatible client for the provider chosen in config.py."""
     name = config.LLM_PROVIDER
-    if name not in _clients:
-        provider = config.PROVIDERS[name]
+    provider = config.PROVIDERS[name]
+    key = get_api_key(provider["key_name"])  # read every time, so a replaced key is used at once
+    if name not in _clients or _clients[name].api_key != key:
         # max_retries=0: the library would quietly retry failed calls. We retry ourselves
         # (Session 4) so that you can see every failure and every retry.
-        _clients[name] = OpenAI(base_url=provider["base_url"], api_key=get_api_key(provider["key_name"]),
-                                max_retries=0)
+        _clients[name] = OpenAI(base_url=provider["base_url"], api_key=key, max_retries=0)
     return _clients[name]
 
 

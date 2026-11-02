@@ -86,7 +86,9 @@ def embed(texts):
     The first call downloads the embedding model (about 90 MB)."""
     name = config.EMBEDDING_MODEL
     if name not in _embedders:
+        from huggingface_hub.utils import logging as hf_logging
         from sentence_transformers import SentenceTransformer
+        hf_logging.set_verbosity_error()  # hides a harmless "Please set a HF_TOKEN" warning (no key is needed)
         _embedders[name] = SentenceTransformer(name)
     # normalize: every vector gets length 1, so "dot product" = cosine similarity (1 = same meaning)
     vectors = _embedders[name].encode(texts, normalize_embeddings=True)

@@ -163,7 +163,8 @@ def main(argv=None):
     failed = statuses.count("FAIL")
     print(f"\n{statuses.count('PASS')} passed, {failed} failed, {statuses.count('TODO')} TODO, "
           f"{statuses.count('SKIP')} skipped")
-    print("All good!" if not failed else "Something is wrong: read the FAIL lines above (docs/known_errors.md has fixes).")
+    print("All good!" if not failed else "Something is wrong: read the FAIL lines above. Students: see 'If something "
+                                         "goes wrong' in the pre-work guide. Helpers: docs/known_errors.md.")
     return 1 if failed else 0
 
 
