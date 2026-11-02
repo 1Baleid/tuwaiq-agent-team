@@ -7,7 +7,7 @@ Checked on **2026-11-02**, from a home connection in Saudi Arabia. Limits and te
 
 1. **Every hosted free tier is 18+ only.** The terms of Groq, Google (Gemini) and OpenRouter all require users to be 18 or older. Students under 18 can only use the local model in Colab. **Add an age question to the sign-up form.**
 2. **Groq is the strongest primary option.** Use `openai/gpt-oss-20b`. Its free models are production models, it is fast (about 2 s per agent question in independent benchmarks), it is OpenAI-compatible, and Saudi customers contract with Groq Limited (Riyadh). The catch is **8,000 tokens per minute per account**, which is about 1–2 agent questions per minute for each student.
-3. **Gemini is the backup.** Use `gemini-3.5-flash-lite`. Google no longer publishes free limits; the unofficial figures are about 10 requests/min and 500/day per student. It always "thinks", which makes it about 10× slower: around 20 s per agent question. Free-tier prompts may be used for training, and new projects sometimes get 429/503 errors on their first call.
+3. **Gemini is the backup.** Use `gemini-3.5-flash-lite`. Google no longer publishes free limits; the unofficial figures are about 10–15 requests/min and 500/day per student, and failed requests count too. It always "thinks", which makes it about 10× slower: around 20 s per agent question. Free-tier prompts may be used for training, and new projects sometimes get 429/503 errors on their first call.
 4. **OpenRouter's free tier is not usable for the class.** It allows 50 requests per day per account, and a single S5 evaluation run uses about 30. Gemma 4 is the only well-known free model family, and its Terms say credits must be bought.
 5. **The local fallback works, but only on a GPU.** Ollama with `qwen3:4b-instruct` passed 10/10 tool-call tests and took about 5 s per call here (Colab's T4 is faster than this GPU). Without a GPU, a call takes 20–40 s. Free Colab does **not** guarantee a GPU.
 6. **One shared free key cannot serve 30 students.** The whole class would share one account's limits: 8K tokens/min on Groq, 10 requests/min on Gemini. Groq's and Google's terms also forbid pooling accounts or sharing keys. Ticket T2 measures this.
@@ -24,11 +24,11 @@ Checked on **2026-11-02**, from a home connection in Saudi Arabia. Limits and te
 | | **Groq** | **Google Gemini API** | **OpenRouter (free models)** | **Local: Ollama in Colab** |
 |---|---|---|---|---|
 | Model to use | `openai/gpt-oss-20b` (or `gpt-oss-120b`: same limits, smarter, half the speed) | `gemini-3.5-flash-lite` | `google/gemma-4-26b-a4b-it:free` | `qwen3:4b-instruct` (2.5 GB) |
-| Free limits | 30 req/min · 1,000 req/day · **8K tokens/min** · 200K tokens/day. **Per account** (Groq "organization"), same for all 3 free chat models | **Not published any more** (only visible inside AI Studio). Unofficial: 10 req/min · 500 req/day · 250K tokens/min, **per Google Cloud project** | 20 req/min · **50 req/day per account**, and **failed requests count too**. 1,000/day only after buying ≥ 10 credits (costs money) | None: each student runs their own model |
+| Free limits | 30 req/min · 1,000 req/day · **8K tokens/min** · 200K tokens/day. **Per account** (Groq "organization"), same for all 3 free chat models | **Not published any more** (only visible inside AI Studio). Unofficial reports: 10–15 req/min · 500 req/day · 250K tokens/min, **per Google Cloud project**. **Failed requests count too** (official) | 20 req/min · **50 req/day per account**, and **failed requests count too**. 1,000/day only after buying ≥ 10 credits (costs money) | None: each student runs their own model |
 | What that means for one student | About 1–2 questions/min (TPM is the limit) and about 50 questions/day (TPD) | About 2–3 questions/min, 100–160 questions/day | About 10–16 questions per **day** | Limited only by speed |
 | Tool calling | Yes, native and JSON mode. gpt-oss cannot make parallel calls | Yes, native, through the OpenAI-compatible endpoint (Google calls it beta) | Yes, for Gemma 4 (14 free models support tools) | Yes: **10/10** in our test, both native and plain JSON |
 | OpenAI-compatible `base_url` | `https://api.groq.com/openai/v1` | `https://generativelanguage.googleapis.com/v1beta/openai/` | `https://openrouter.ai/api/v1` | `http://localhost:11434/v1` |
-| Students can sign up from Saudi Arabia? | **Yes.** Groq Limited (Riyadh) is the contracting party for customers in KSA, and no restriction was found. Login with Google, GitHub or email. No phone or card mentioned | **Yes.** Saudi Arabia is on Google's official list (in Colab, the VM's region is what counts). Google account, no card. Google may ask for age verification by ID or credit card | **Probably.** The Terms list no blocked countries. Email, Google or GitHub; the phone option is switched off | No account needed |
+| Students can sign up from Saudi Arabia? | **Yes.** Groq Limited (Riyadh) is the contracting party for customers in KSA, and no restriction was found. Login with Google, GitHub or email. No phone or card mentioned | **Yes.** Saudi Arabia is on Google's official list (in Colab, the VM's region is what counts). Google account, no card. Google may ask for age verification by ID or credit card. **A new Google account can need phone verification**, and Google limits accounts per phone number, so set up before the day | **Probably.** The Terms list no blocked countries. Email, Google or GitHub; the phone option is switched off | No account needed |
 | Minimum age | **18** | **18** (under-18 school Workspace accounts are blocked) | **18** | none |
 | Network round-trip from Saudi Arabia (measured, no model work) | ~0.47 s | 0.7–1.5 s | 0.5–0.8 s | 0 |
 | Model latency (independent benchmark from the US, ~1K-token prompt) | **0.19 s** to first token, ~840 tokens/s, so **≈ 2 s per agent question** | **4.7 s** to first token (its "thinking" is counted in that time), so **≈ 20 s per question** | OpenRouter's own figures for Gemma 4 free: 0.9 s typical, **8 s at the slow end** (p95) | **Measured here:** ≈ 4.8 s per RAG call on a GTX 1060 |
@@ -92,15 +92,19 @@ The agent needs one tool-call format that works with **every** provider, includi
 | Sign-up really works from Saudi Arabia | Needs a person, an 18+ account and a phone | One 18+ teammate signs up for Groq and Google AI Studio with a **personal** Gmail on a Saudi connection, and writes down any phone, ID or card prompts (15 min) |
 | Gemini's real free limits | Shown only to signed-in users | After signing in, open `aistudio.google.com/rate-limit` and screenshot the Free tier row for `gemini-3.5-flash-lite` (2 min) |
 | Colab GPU, driver and Ollama install | I can't run Colab | Run the T3 notebook `notebooks/00_setup.ipynb` on a fresh Colab **GPU** runtime and check that `ollama ps` shows "100% GPU" (10 min) |
+| Colab works on the **venue Wi-Fi** | In late Oct 2026, some ISPs' DNS could not resolve Colab's runtime domain `*.prod.r.colab.dev` ("Unable to connect to the runtime") | Ask Tuwaiq IT to allow `*.prod.r.colab.dev`. Then connect a Colab notebook from the venue Wi-Fi a few days before Session 1 (5 min) |
 
 ## How these facts were checked
 
 - **Research:** one research agent per topic read the providers' **own** pages and quoted them word for word, with URLs (below).
-- **Fact-check:** a second, independent agent then re-read the sources and tried to **refute** every decision-critical claim.
-  - Groq: 40 of 41 claims confirmed. The 41st, the name of a native tool-call error code, doesn't affect us.
-  - OpenRouter: 38 of 40 confirmed. The other two were corrected above: failed requests do count, and latency figures do exist.
+- **Fact-check:** a second, independent agent then re-read the sources and tried to **refute** every decision-critical claim. Corrections are already in this document.
+  - **Groq:** 40 of 41 confirmed. The 41st, the name of a native tool-call error code, doesn't affect us.
+  - **OpenRouter:** 38 of 40 confirmed. The other two were corrected: failed requests do count, and latency figures do exist.
+  - **Gemini:** 34 of 39 confirmed. Four are the unofficial limit reports, labelled as such; the fifth is that Google does publish one speed figure (350 tokens/s). Added from the fact-check: failed requests count against the quota, and new Google accounts may need phone verification.
+  - **Local model:** 40 of 41 confirmed. The other was about vLLM, which we don't use.
+  - **Colab:** 38 of 40 confirmed. The other two were about pinning a runtime version, which doesn't affect this comparison. Added from the fact-check: the venue Wi-Fi/DNS check.
+  - **Other providers:** 38 of 38 confirmed.
 - **Unofficial figures are labelled as such:** Gemini's current limits and the independent latency benchmarks.
-- **Still running when this was committed:** the fact-checks for Gemini, the local model, Colab, the other providers and the latency figures. Any corrections will follow in a separate commit named "T1: fact-check fixes".
 
 ## Sources (read 2026-11-02)
 
