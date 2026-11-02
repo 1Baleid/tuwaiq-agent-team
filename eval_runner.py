@@ -80,10 +80,10 @@ def results_table(rows):
     return table.style.apply(color, axis=1)
 
 
-def save_results(rows):
-    """Save the rows to results/eval_<date_time>.csv, to compare runs before and after a fix."""
+def save_results(rows, label="run"):
+    """Save the rows to results/eval_<label>_<date_time>.csv, to compare runs before and after a fix."""
     import pandas as pd
-    path = config.ROOT / "results" / f"eval_{datetime.now():%Y%m%d_%H%M%S}.csv"
+    path = config.ROOT / "results" / f"eval_{label}_{datetime.now():%Y%m%d_%H%M%S}.csv"
     path.parent.mkdir(exist_ok=True)
     pd.DataFrame(rows).to_csv(path, index=False)
     print(f"Saved {path.relative_to(config.ROOT)}")

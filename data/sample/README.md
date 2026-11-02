@@ -4,11 +4,12 @@ Public placeholder documents, used until Group 3 delivers the real corpus.
 
 | File | What it is |
 |---|---|
-| `docs/` | The documents the agent searches: `.txt`, `.md` and `.pdf` files. Every file in here is indexed. |
+| `docs/` | The documents the agent searches. |
 | `sources.csv` | One row per document: title, URL, date retrieved, licence, and what we changed. |
 | `deadlines.csv` | The table behind the `get_deadline` tool (`name,date,note`, dates as `YYYY-MM-DD`). **The dates here are invented** for testing. |
 
-The documents are Wikipedia articles (CC BY-SA 4.0), fixed to the revisions linked in `sources.csv`.
+Most documents are Wikipedia articles (CC BY-SA 4.0), fixed to the revisions linked in `sources.csv`.
+`library_rules.html` is an **invented** example page (not a real policy), written for the workshop.
 
 ## Swapping in the real corpus
 
