@@ -1,6 +1,6 @@
 # LLM access decision (ticket T2)
 
-Written 2026-11-02. **Status:** a recommendation. The final provider choice needs Abdullah's OK. The real-provider load tests are **waiting for API keys**; the commands to finish them are at the end.
+Written 2026-11-02. **Status:** a recommendation. The final provider choice needs the technical lead's OK. The real-provider load tests are **waiting for API keys**; the commands to finish them are at the end.
 
 ## Recommendation
 
