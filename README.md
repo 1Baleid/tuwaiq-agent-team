@@ -80,6 +80,9 @@ model, and students see the parsing and validation happen. The test is in `docs/
   Markers work in `.py` files and in notebook code cells.
 * **Regenerate `main`** after committing on `solutions`: `python scripts/make_main.py`.
   `python scripts/make_main.py --check` fails if `main` has drifted. `--show rag.py` previews one file.
+* **Two repos:** the team repo (this one, with internal docs) and the student repo that participants clone.
+  `python scripts/publish_students.py` copies both branches to the student repo, minus the internal docs.
+  See `HANDOVER.md` (team repo only).
 * **Stuck student (10-minute rule):** get the working version of one file:
   `git checkout origin/solutions -- rag.py` (in Colab: prefix with `!`).
 * On `main`, the smoke test shows unfinished exercises as **TODO**, not FAIL.
@@ -100,6 +103,7 @@ For Arabic documents, also change `EMBEDDING_MODEL` (see the comment in `config.
 | `python scripts/tool_format_test.py local` | which tool-call format a model follows |
 | `python scripts/local_model.py` | start the local fallback model |
 | `python scripts/make_main.py [--check]` | build `main` from `solutions` |
+| `python scripts/publish_students.py [URL]` | copy both branches to the student repo (without internal docs) |
 | `python eval_runner.py` | run the evaluation set from a terminal |
 | `python tests/test_make_main.py` | tests for the branch generator |
 

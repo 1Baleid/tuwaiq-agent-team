@@ -1,7 +1,7 @@
 # LLM options: free tiers compared (ticket T1)
 
 Checked on **2026-11-02**, from a home connection in Saudi Arabia. Limits and terms come from each provider's official docs (links at the end). Measurements were taken on this laptop: Windows 10, GTX 1060 6 GB.
-**Status:** comparison only. Choosing the provider is ticket T2 and needs Abdullah's approval.
+**Status:** comparison only. Choosing the provider is ticket T2 and needs the technical lead's approval.
 
 ## The short version
 
