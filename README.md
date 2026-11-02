@@ -14,7 +14,7 @@ It downloads this repo, checks your API key (from Colab Secrets) and runs the sm
 **On a laptop** (Python 3.13 recommended; it is what Colab uses):
 
 ```bash
-git clone <this repo> tuwaiq && cd tuwaiq
+git clone https://github.com/1Baleid/tuwaiq-agent-workshop.git tuwaiq && cd tuwaiq
 python -m venv .venv
 .venv\Scripts\activate                 # Windows   (macOS/Linux: source .venv/bin/activate)
 python -m pip install -r requirements.txt
