@@ -14,6 +14,7 @@ written yet, which is normal on the `main` branch. Exit code 1 if any check FAIL
 import argparse
 import importlib.metadata
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -69,14 +70,77 @@ def check_llm():
     return f"{config.LLM_PROVIDER} / {provider['model']} replied {reply.strip()[:30]!r} in {time.perf_counter() - start:.1f}s"
 
 
-def check_corpus_and_chunks():
+def check_loading():
     import config
     import rag
     documents = rag.load_documents()
     if not documents:
         raise RuntimeError(f"no .txt/.md/.pdf files in {config.CORPUS_DIR}")
-    chunks = rag.make_chunks(documents)  # TODO on main until Session 3
-    return f"{len(documents)} documents -> {len(chunks)} chunks"
+    bad = next((d for d in documents if set(d) != {"source", "text"} or "/" in d["source"] or "\\" in d["source"]), None)
+    if bad:
+        raise RuntimeError(f"each document must be {{'source': file name only, 'text': ...}}; got keys {sorted(bad)}, "
+                           f"source={bad.get('source')!r}")
+    return f"{len(documents)} documents loaded"
+
+
+def check_chunks():
+    import rag
+    example = rag.chunk_text("abcdefghij", 4, 1)  # the example in chunk_text's docstring
+    if example != ["abcd", "defg", "ghij"]:
+        raise RuntimeError(f"chunk_text('abcdefghij', 4, 1) should give ['abcd', 'defg', 'ghij'], got {example}")
+    chunks = rag.make_chunks(rag.load_documents())
+    bad = next((c for c in chunks if not re.fullmatch(re.escape(c.get("source", "")) + r"#\d+", str(c.get("id")))), None)
+    if bad:  # answer.cited_sources() only accepts ids like "file.txt#3"
+        raise RuntimeError(f"chunk ids must look like 'file.txt#3'; got {bad.get('id')!r}")
+    return f"chunk_text matches its docstring example; {len(chunks)} chunks with ids like {chunks[0]['id']!r}"
+
+
+SECTION_DOC = {"source": "01-05_Test_Doc.md", "text": "intro line\n## Rule A\nfirst rule\n## Rule B\nsecond rule"}
+SECTION_CHUNKS = ["01-05 test doc: intro line", "01-05 test doc > Rule A: first rule", "01-05 test doc > Rule B: second rule"]
+
+
+def check_sections():
+    import config
+    import rag
+    got = rag.chunk_by_section(SECTION_DOC)
+    if got != SECTION_CHUNKS:
+        raise RuntimeError(f"chunk_by_section should give {SECTION_CHUNKS}, got {got}")
+    before = config.CHUNK_BY_SECTION
+    config.CHUNK_BY_SECTION = True
+    try:
+        texts = [c["text"] for c in rag.make_chunks([SECTION_DOC])]
+    finally:
+        config.CHUNK_BY_SECTION = before
+    if texts != SECTION_CHUNKS:
+        raise RuntimeError(f"with CHUNK_BY_SECTION = True, make_chunks must use chunk_by_section; got {texts}")
+    return "chunk_by_section labels every section, and make_chunks uses it when CHUNK_BY_SECTION = True"
+
+
+def check_answer_helpers():
+    import answer
+    import config
+    import rag
+    hits = [{"id": "a.txt#1", "source": "a.txt", "text": "first", "score": 0.9},
+            {"id": "b.txt#4", "source": "b.txt", "text": "second", "score": 0.8}]
+    expected = "[a.txt#1]\nfirst\n\n[b.txt#4]\nsecond"
+    got = answer.format_sources(hits)
+    if got != expected:
+        raise RuntimeError(f"format_sources should give {expected!r}, got {got!r}")
+    messages = answer.build_messages("Q?", hits)
+    if [m["role"] for m in messages] != ["system", "user"] or "Question: Q?" not in messages[1]["content"]:
+        raise RuntimeError(f"build_messages should give a system and a user message; got {messages}")
+    got = answer.cited_sources("x [b.txt#4] y [c.txt#9] [4] [b.txt#4] [a.txt#1]", {"a.txt#1", "b.txt#4"})
+    if got != ["b.txt#4", "a.txt#1"]:
+        raise RuntimeError(f"cited_sources should give ['b.txt#4', 'a.txt#1'], got {got}")
+    before = config.MIN_SCORE
+    config.MIN_SCORE = 2.0  # no chunk can reach it, so answer_question must not even call the LLM
+    try:
+        result = answer.answer_question(state.get("store") or rag.get_store(), "anything at all")
+    finally:
+        config.MIN_SCORE = before
+    if result["answer"] != answer.I_DONT_KNOW or result["sources"]:
+        raise RuntimeError(f"answer_question must return I_DONT_KNOW with no sources below MIN_SCORE; got {result['answer'][:80]!r}")
+    return "format_sources, build_messages, cited_sources and the MIN_SCORE refusal work"
 
 
 def check_search():
@@ -131,7 +195,9 @@ def check_agent():
 
 QUICK = [("Python version", check_python), ("Packages", check_packages),
          ("Embedding model (downloads ~90 MB once)", check_embeddings), ("LLM key and one call", check_llm)]
-FULL = QUICK + [("Session 3: documents and chunks", check_corpus_and_chunks), ("Session 3: search", check_search),
+FULL = QUICK + [("Session 3: loading", check_loading), ("Session 3: chunks", check_chunks),
+                ("Session 3: search", check_search),
+                ("Session 3: section chunking", check_sections), ("Session 3: answer helpers", check_answer_helpers),
                 ("Session 3: answer with citations", check_rag_answer), ("Session 1: tools", check_tools),
                 ("Sessions 1-2: agent loop", check_agent)]
 
@@ -139,12 +205,17 @@ FULL = QUICK + [("Session 3: documents and chunks", check_corpus_and_chunks), ("
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Check that the workshop setup works.")
     parser.add_argument("--quick", action="store_true", help="setup checks only (pre-work)")
+    parser.add_argument("--only", action="append", metavar="NAME",
+                        help="run only the checks whose name contains NAME (repeatable), e.g. --only 'Session 3'")
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")  # Windows consoles may not print every character otherwise
 
     statuses = []
-    for name, check in (QUICK if args.quick else FULL):
+    checks = QUICK if args.quick else FULL
+    if args.only:
+        checks = [(name, check) for name, check in checks if any(part.lower() in name.lower() for part in args.only)]
+    for name, check in checks:
         print(f"- {name}: ", end="", flush=True)
         start = time.perf_counter()
         try:
@@ -165,7 +236,9 @@ def main(argv=None):
           f"{statuses.count('SKIP')} skipped")
     print("All good!" if not failed else "Something is wrong: read the FAIL lines above. Students: see 'If something "
                                          "goes wrong' in the pre-work guide. Helpers: docs/known_errors.md.")
-    return 1 if failed else 0
+    # Exit code: 0 = every check passed, 1 = a check failed, 2 = no failure but work is left (TODO or SKIP).
+    # Code 2 lets the coding harness (harness.py) see that the work is not finished yet.
+    return 1 if failed else 2 if statuses.count("TODO") or statuses.count("SKIP") else 0
 
 
 if __name__ == "__main__":

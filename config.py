@@ -58,7 +58,8 @@ import os
 CORPUS_DIR = ROOT / os.environ.get("CORPUS_DIR", "data/kfupm_raw")
 DEADLINES_FILE = ROOT / "data" / "deadlines.csv"   # the table behind the get_deadline tool
 
-# Small (90 MB) and fast, English only. It reads at most ~256 words per chunk.
+# Small (90 MB) and fast, English only. It reads at most 256 tokens per chunk (about 1000 characters of our
+# documents); the rest of a longer chunk is not searched.
 # For Arabic documents use "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" (470 MB).
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
