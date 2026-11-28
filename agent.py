@@ -135,7 +135,13 @@ def run_agent(question, history=None):
         result["stopped"] = "max_steps"
     if result["answer"] is None:
         result["answer"] = f"Sorry, I could not finish this question (stopped: {result['stopped']})."
-    known_ids = {chunk["id"] for chunk in rag.get_store()["chunks"]}
+    # Only real chunk ids count as sources. Without a search there is nothing to cite, so the index is not
+    # needed: the agent can answer calculator and deadline questions before rag.py is written.
+    searched = "search_docs" in result["tools_used"]
+    try:
+        known_ids = {chunk["id"] for chunk in rag.get_store()["chunks"]} if searched else set()
+    except NotImplementedError:  # rag.py is not written yet: no index, so no sources
+        known_ids = set()
     result["sources"] = answer.cited_sources(result["answer"], known_ids)
     result["seconds"] = round(time.monotonic() - started, 1)
     # Remember only the question and the final answer for follow-up questions (Session 2: state).

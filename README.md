@@ -27,16 +27,63 @@ python scripts/smoke_test.py
 | File | Session | What it does |
 |---|---|---|
 | `config.py` | all | **Every setting**, including the one LLM switch `LLM_PROVIDER` |
-| `rag.py` | 3 | load documents → chunks → embeddings → FAISS index → `search()` |
-| `answer.py` | 3 | answer from the best chunks, with citations like `[01-05_Attendance_And_Withdrawal.md#3]`, or "I don't know" |
+| `rag.py` | 3 | **built with the harness** (empty on `main`, reference code here): load documents → chunks → embeddings → FAISS index → `search()` |
+| `answer.py` | 3 | **built with the harness** (empty on `main`): answer from the best chunks, with citations like `[01-05_Attendance_And_Withdrawal.txt#3]`, or "I don't know" |
+| `harness.py` | 3 | **given complete** (also on `main`): the coding harness students ask to build `rag.py` and `answer.py` (see below) |
 | `tools.py` | 1 | the tool registry: `search_docs`, `calculator`, `get_deadline`, plus `validate_call()` |
 | `agent.py` | 1–2 | the agent loop: tool calls as plain JSON, validation, step limit, timeout, retries, log file |
-| `llm.py` | all | `chat()` for every provider (one OpenAI-compatible client) and `chat_with_retries()` (S2) |
+| `llm.py` | all | `chat()` for every provider (one OpenAI-compatible client) and `chat_with_retries()` (given complete on `main` too: the harness needs it) |
 | `eval_runner.py` | 5 | runs `eval/questions.json` and shows a results table with failures flagged |
 | `data/` | | the 34 KFUPM documents in three folders: `kfupm_raw/` (plain text, default, used in the slides), `kfupm_structured/` (Markdown), `kfupm_pdf/` (originals), plus `deadlines.csv`. See `data/README.md` |
 | `notebooks/` | | `00_setup.ipynb` (pre-work) and `s5_evaluate.ipynb` (Session 5) |
 | `scripts/` | | instructor tools (table below) |
 | `docs/` | | decisions, pre-work, known errors, handovers |
+
+## Use the coding harness (`harness.py`, Session 3)
+
+In Session 3 you do not type the RAG code yourself: you ask the coding harness to build it, the way
+you would ask Claude Code or Codex. The functions in `rag.py` and `answer.py` are **empty**; each has a
+docstring (what it returns) and numbered comments (how). Together they are the specification the
+harness follows. Your job is to give it good requests, watch it work, and check what it built.
+
+**How to ask it something:** run the file with your request in quotes, from the project folder.
+
+```bash
+cd tuwaiq-agent-team                        # the project folder (cd goes into folders, not files)
+python harness.py "Which functions in rag.py are still empty? Do not change anything."
+```
+
+In Colab, put `!` in front: `!python harness.py "..."`.
+
+It prints every step while it works (`read_file`, `edit_file`, `run_check`, ...) and ends with its
+answer. **One request per run:** each run starts fresh and does not remember the previous one.
+
+**One step per request works best.** A good order for Session 3:
+
+```bash
+python harness.py "Write read_file and load_documents in rag.py, then run run_check('load')"
+python harness.py "Write chunk_text and make_chunks in rag.py, then run run_check('chunks')"
+python harness.py "Write embed, numpy_search, build_index and search_docs in rag.py, then run run_check('search')"
+python harness.py "Write split_sections and chunk_by_section in rag.py, then run run_check('sections')"
+python harness.py "Write the four empty functions in answer.py, then run run_check('answer')"
+```
+
+**After every request, check its work:**
+
+* `git diff rag.py` shows exactly what it changed. Read it: can you explain each line?
+* `python scripts/smoke_test.py` runs every check yourself (PASS / FAIL / TODO).
+* `logs/harness.jsonl` has every step it took, when you need to know why it got stuck.
+* `git restore rag.py` throws its changes away, so you can try again with a better request.
+
+**Its checks:** one per step: `load`, `chunks` (incl. the id format), `search`, `sections`, and
+`answer` for `answer.py`; `rag` runs all four `rag.py` checks. Name the check in your request. The harness may not finish until the check it ran
+after its last edit passes. What the checks do not test, it can still get wrong: that is why you read
+the diff.
+
+**Safety:** its file tools stay inside the project, refuse to open `.env` (your key), and cannot change
+`data/` or `eval/questions.json`; it runs only `python`, `pytest` and read-only `git`. These are guard
+rails for class, not a sandbox (`python` can still do anything you can), so run it on your own copy of
+the project and read its changes before you keep them.
 
 ## Settings to change on purpose ("break it, then fix it")
 
@@ -103,6 +150,7 @@ For Arabic documents, also change `EMBEDDING_MODEL` (see the comment in `config.
 | `python scripts/load_test.py shared --n 30` | can one key serve N students at once? (`burst` = one student) |
 | `python scripts/tool_format_test.py local` | which tool-call format a model follows |
 | `python scripts/local_model.py` | start the local fallback model |
+| `python harness.py "task"` | the coding harness: inspect, edit and test the RAG code (`--provider` / `--model` override, `--print-prompt` shows its prompt) |
 | `python scripts/make_main.py [--check]` | build `main` from `solutions` |
 | `python scripts/publish_students.py [URL]` | copy both branches to the student repo (without internal docs) |
 | `python eval_runner.py` | run the evaluation set from a terminal |
