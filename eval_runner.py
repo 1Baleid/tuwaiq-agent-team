@@ -7,17 +7,18 @@ eval_runner.py - Session 5: run the evaluation set and see what fails.
 
 Each question in eval/questions.json looks like:
     {"id": "q1",
-     "question": "How long is one pomodoro?",
-     "expected_answer": "25 minutes",
-     "source": "pomodoro_technique.txt",    # file that holds the answer; "tool:<name>" if a tool
+     "question": "What is the minimum course load in a regular semester?",
+     "expected_answer": "13 credit hours",
+     "source": "01-04_The_Academic_Levels_System",  # file that holds the answer (no extension); "tool:<name>" if a tool
                                             # gives it; null if the right answer is "I don't know"
-     "keywords": ["25"]}                    # words the answer must contain; "a|b" means a OR b
+     "keywords": ["13"]}                    # words the answer must contain; "a|b" means a OR b
 
 Keywords let us mark answers automatically, without paying for another LLM call.
 Run from a terminal:  python eval_runner.py
 """
 import json
 from datetime import datetime
+from pathlib import Path
 
 import agent
 import config
@@ -38,8 +39,9 @@ def check(result, question):
                     for keyword in question["keywords"])
     if source.startswith("tool:"):  # the answer must come from a tool, e.g. "tool:get_deadline"
         return answer_ok, source.removeprefix("tool:") in result["tools_used"]
-    cited_files = {source_id.split("#")[0] for source_id in result["sources"]}  # "x.txt#3" -> "x.txt"
-    return answer_ok, source in cited_files
+    # "x.md#3" -> "x": the .pdf, .md and .txt copies of a document count as the same document
+    cited_files = {Path(source_id.split("#")[0]).stem for source_id in result["sources"]}
+    return answer_ok, Path(source).stem in cited_files
 
 
 def run_eval(path=None):

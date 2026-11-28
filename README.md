@@ -27,13 +27,13 @@ python scripts/smoke_test.py
 | File | Session | What it does |
 |---|---|---|
 | `config.py` | all | **Every setting**, including the one LLM switch `LLM_PROVIDER` |
-| `rag.py` | 1 | load documents → chunks → embeddings → FAISS index → `search()` |
-| `answer.py` | 2 | answer from the best chunks, with citations like `[course_credit.txt#3]`, or "I don't know" |
-| `tools.py` | 3 | the tool registry: `search_docs`, `calculator`, `get_deadline`, plus `validate_call()` |
-| `agent.py` | 3–4 | the agent loop: tool calls as plain JSON, validation, step limit, timeout, retries, log file |
-| `llm.py` | all | `chat()` for every provider (one OpenAI-compatible client) and `chat_with_retries()` (S4) |
+| `rag.py` | 3 | load documents → chunks → embeddings → FAISS index → `search()` |
+| `answer.py` | 3 | answer from the best chunks, with citations like `[01-05_Attendance_And_Withdrawal.md#3]`, or "I don't know" |
+| `tools.py` | 1 | the tool registry: `search_docs`, `calculator`, `get_deadline`, plus `validate_call()` |
+| `agent.py` | 1–2 | the agent loop: tool calls as plain JSON, validation, step limit, timeout, retries, log file |
+| `llm.py` | all | `chat()` for every provider (one OpenAI-compatible client) and `chat_with_retries()` (S2) |
 | `eval_runner.py` | 5 | runs `eval/questions.json` and shows a results table with failures flagged |
-| `data/sample/` | | placeholder corpus: `docs/`, `sources.csv`, `deadlines.csv` (see its README) |
+| `data/` | | the KFUPM documents in three copies: `kfupm_structured/` (Markdown, default), `kfupm_raw/` (plain dump), `sample/` (original PDFs) |
 | `notebooks/` | | `00_setup.ipynb` (pre-work) and `s5_evaluate.ipynb` (Session 5) |
 | `scripts/` | | instructor tools (table below) |
 | `docs/` | | decisions, pre-work, known errors, handovers |
@@ -46,6 +46,7 @@ All in `config.py`, as plain variables. Functions read them **when they run**, s
 | Setting | Default | Try |
 |---|---|---|
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | 500 / 100 characters | 50 or 3000: search results get worse |
+| `CHUNK_BY_SECTION` | `False` | `True`: one chunk per `## heading` section of `data/kfupm_structured`, with the heading in front |
 | `TOP_K` | 4 chunks per search | 1: answers miss facts |
 | `MIN_SCORE` | 0.40 | 0.0: off-topic questions now come with "sources", so only the LLM stands between you and a made-up answer |
 | `MAX_STEPS` | 5 LLM calls per question | 1: tool questions stop before answering |
@@ -70,7 +71,7 @@ model, and students see the parsing and validation happen. The test is in `docs/
 * **Only ever edit `solutions`.** Code that students write in a session is wrapped in markers:
 
   ```python
-  # SOLUTION START: TODO (Session 1): cut `text` into chunks of `size` characters
+  # SOLUTION START: TODO (Session 3): cut `text` into chunks of `size` characters
   ...working code...
   # SOLUTION END
   ```
@@ -118,4 +119,4 @@ FAISS was chosen over ChromaDB: on Colab it installs one package with no conflic
 
 `docs/llm_options.md` (T1) · `docs/llm_decision.md` (T2) · `docs/prework.md` · `docs/known_errors.md` · `docs/handover/`
 
-Sample documents: Wikipedia, CC BY-SA 4.0 (see `data/sample/sources.csv`).
+Documents: public pages of King Fahd University of Petroleum & Minerals (KFUPM): original PDFs in `data/sample/`, a structured Markdown copy in `data/kfupm_structured/` and a plain-text copy in `data/kfupm_raw/`; source URL per file in each `sources.csv`.

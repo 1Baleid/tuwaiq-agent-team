@@ -5,15 +5,15 @@ working fixes. The demo format and rubric are handled separately.
 
 ## What students see
 
-`eval/questions.json` has 10 questions. With working Session 1–4 code, the first run gives **7 of 10**.
+`eval/questions.json` has 10 questions. With working Sessions 1–3 code, the first run gives **7 of 10**.
 The failing rows are the three **planted** questions below. After the three fixes the second run gives
 **10 of 10** (tested on 2026-11-02 with the local model `qwen3:4b-instruct`; re-test with the chosen provider).
 
 | Question | What fails | The clue students should find | Fix (cell) | Skill |
 |---|---|---|---|---|
-| **q8** "How many books can an undergraduate student borrow…?" | Answer "I don't know", no source | Building the index prints `Skipped 1 file(s) this loader cannot read: library_rules.html` | **Fix 1:** `rag.read_file` also reads `.html` (drop the tags), then `rag.get_store(rebuild=True)` | S1: loading documents |
-| **q9** "What is the last day to add or drop a course?" | Answer "I don't know" | `explain("q9")` shows `get_deadline` called with a name like "add/drop deadline", and the tool answering `No deadline called …` | **Fix 2:** `tools.find_deadline` picks the deadline sharing the most words with the asked name | S3: tools |
-| **q10** "When is the course withdrawal deadline?" | Answer "I don't know" or "date not valid" | `explain("q10")` shows the tool answering `The date of 'Course withdrawal deadline' … is not a valid YYYY-MM-DD date`; the CSV row says `17/12/2026` | **Fix 3:** `tools.parse_date` accepts `17/12/2026` as well as `2026-12-17` | S4: errors and messy data |
+| **q8** "How many books can an undergraduate student borrow…?" | Answer "I don't know", no source | Building the index prints `Skipped 1 file(s) this loader cannot read: library_rules.html` | **Fix 1:** `rag.read_file` also reads `.html` (drop the tags), then `rag.get_store(rebuild=True)` | S3: loading documents |
+| **q9** "What is the last day to add or drop a course?" | Answer "I don't know" | `explain("q9")` shows `get_deadline` called with a name like "add/drop deadline", and the tool answering `No deadline called …` | **Fix 2:** `tools.find_deadline` picks the deadline sharing the most words with the asked name | S1: tools |
+| **q10** "When is the course withdrawal deadline?" | Answer "I don't know" or "date not valid" | `explain("q10")` shows the tool answering `The date of 'Course withdrawal deadline' … is not a valid YYYY-MM-DD date`; the CSV row says `17/12/2026` | **Fix 3:** `tools.parse_date` accepts `17/12/2026` as well as `2026-12-17` | S2: errors and messy data |
 
 Why these three: they fail **whatever LLM is used**, because the information is missing or unreadable rather
 than the model being weak. Each one is discovered by reading the agent's steps (`explain()`), not by guessing.

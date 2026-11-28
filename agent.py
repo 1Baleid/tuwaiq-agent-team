@@ -1,5 +1,5 @@
 """
-agent.py - Sessions 3 and 4: the agent loop (the "harness").
+agent.py - Sessions 1-2: the agent loop (the "harness").
 
 The LLM cannot run anything; it can only reply with text. This loop does the work:
   1. send the question and the list of tools to the LLM
@@ -29,7 +29,7 @@ Rules:
   call search_docs first, then answer only from what it returns.
 - Never do arithmetic in your head: use the calculator tool.
 - For a question about a deadline, an exam, an event or a date, call get_deadline.
-- After each fact from the documents, cite its source exactly as labelled, like [course_credit.txt#3].
+- After each fact from the documents, cite its source exactly as labelled, like [01-05_Attendance_And_Withdrawal.md#3].
 - If the tools cannot answer the question, reply {"answer": "{i_dont_know}"}
 
 Reply with ONE JSON object and nothing else.
@@ -74,7 +74,7 @@ def log_event(event, **details):
     """Record what the agent does: print a short line (if VERBOSE) and keep a log file."""
     if config.VERBOSE:
         print(f"  [{event}] " + " | ".join(f"{key}={str(value)[:150]}" for key, value in details.items()))
-    # SOLUTION START: TODO (Session 4): also append {"time": ..., "event": event, **details} as ONE JSON line to config.LOG_FILE
+    # SOLUTION START: TODO (Session 2): also append {"time": ..., "event": event, **details} as ONE JSON line to config.LOG_FILE
     config.LOG_FILE.parent.mkdir(exist_ok=True)
     record = {"time": datetime.now().isoformat(timespec="seconds"), "event": event, **details}
     with open(config.LOG_FILE, "a", encoding="utf-8") as f:
@@ -95,7 +95,7 @@ def run_agent(question, history=None):
 
     result = {"question": question, "answer": None, "sources": [], "steps": 0, "tools_used": [], "stopped": None}
     for step in range(1, config.MAX_STEPS + 1):
-        # SOLUTION START: TODO (Session 4): stop (result["stopped"] = "timeout") when more than config.AGENT_TIMEOUT_SECONDS have passed
+        # SOLUTION START: TODO (Session 2): stop (result["stopped"] = "timeout") when more than config.AGENT_TIMEOUT_SECONDS have passed
         if time.monotonic() - started > config.AGENT_TIMEOUT_SECONDS:
             result["stopped"] = "timeout"
             break
@@ -109,7 +109,7 @@ def run_agent(question, history=None):
             result["stopped"] = "llm_error"
             break
         messages.append({"role": "assistant", "content": reply})
-        # SOLUTION START: TODO (Session 3): parse the reply; if it has "answer", finish; otherwise validate the tool call, run it, and send the result back
+        # SOLUTION START: TODO (Session 1): parse the reply; if it has "answer", finish; otherwise validate the tool call, run it, and send the result back
         try:
             action = parse_reply(reply)
         except ValueError as e:  # bad JSON: tell the LLM what is wrong and let it try again
@@ -138,7 +138,7 @@ def run_agent(question, history=None):
     known_ids = {chunk["id"] for chunk in rag.get_store()["chunks"]}
     result["sources"] = answer.cited_sources(result["answer"], known_ids)
     result["seconds"] = round(time.monotonic() - started, 1)
-    # Remember only the question and the final answer for follow-up questions (Session 4: state).
+    # Remember only the question and the final answer for follow-up questions (Session 2: state).
     # The answer is stored as JSON, the same format we ask the LLM to reply in.
     result["history"] = (history or []) + [
         {"role": "user", "content": question},

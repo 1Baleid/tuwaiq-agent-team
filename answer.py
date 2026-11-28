@@ -1,13 +1,13 @@
 """
-answer.py - Session 2: answers you can trust.
+answer.py - Session 3: answers you can trust.
 
 Find the best chunks, give them to the LLM labelled with their id, and get back an answer that
-cites them, like "A credit is about 15 hours of class [course_credit.txt#3]", or "I don't know"
+cites them, like "Unexcused absences over 20% give a DN grade [01-05_Attendance_And_Withdrawal.md#3]", or "I don't know"
 when the documents do not contain the answer.
 
     import rag, answer
     store = rag.build_store()
-    result = answer.answer_question(store, "Who created the Pomodoro Technique?")
+    result = answer.answer_question(store, "What share of absences leads to a DN grade?")
     print(result["answer"], result["sources"])
 """
 import re
@@ -19,18 +19,18 @@ import rag
 I_DONT_KNOW = "I don't know based on the documents."
 
 SYSTEM_PROMPT = f"""You answer questions using ONLY the sources you are given.
-After each fact, cite its source exactly as it is labelled, like [course_credit.txt#3].
+After each fact, cite its source exactly as it is labelled, like [01-05_Attendance_And_Withdrawal.md#3].
 If the sources do not contain the answer, reply exactly: {I_DONT_KNOW}"""
 
 
 def format_sources(hits):
-    """Label each chunk with its id for the prompt: '[course_credit.txt#3]\n<text>' ..."""
+    """Label each chunk with its id for the prompt: '[01-05_Attendance_And_Withdrawal.md#3]\n<text>' ..."""
     return "\n\n".join(f"[{hit['id']}]\n{hit['text']}" for hit in hits)
 
 
 def build_messages(question, hits):
     """The chat messages for the LLM: the instructions, then the numbered sources and the question."""
-    # SOLUTION START: TODO (Session 2): return [system message with SYSTEM_PROMPT, user message with format_sources(hits) and the question]
+    # SOLUTION START: TODO (Session 3): return [system message with SYSTEM_PROMPT, user message with format_sources(hits) and the question]
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": f"Sources:\n{format_sources(hits)}\n\nQuestion: {question}"},
@@ -49,7 +49,7 @@ def answer_question(store, question):
     """Answer a question from the documents. Returns {"answer", "sources", "hits"}."""
     hits = rag.search(store, question)
     # "I don't know", check 1: no chunk is close enough to the question, so don't even ask the LLM.
-    # SOLUTION START: TODO (Session 2): if there are no hits, or the best score is below config.MIN_SCORE, return I_DONT_KNOW with no sources
+    # SOLUTION START: TODO (Session 3): if there are no hits, or the best score is below config.MIN_SCORE, return I_DONT_KNOW with no sources
     if not hits or hits[0]["score"] < config.MIN_SCORE:
         return {"answer": I_DONT_KNOW, "sources": [], "hits": hits}
     # SOLUTION ELSE

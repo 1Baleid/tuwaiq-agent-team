@@ -1,15 +1,18 @@
 """
-rag.py - Session 1: from documents to a searchable index.
+rag.py - Session 3: from documents to a searchable index.
 
     documents  ->  chunks  ->  embeddings (vectors)  ->  index  ->  search
 
     import rag
     store = rag.build_store()            # load, chunk, embed and index the corpus
-    for hit in rag.search(store, "How many hours is one credit?"):
+    for hit in rag.search(store, "What share of absences leads to a DN grade?"):
         print(round(hit["score"], 2), hit["id"], hit["text"][:80])
 
 Later sessions call rag.get_store(), which builds the store once and reuses it.
 """
+import re
+from pathlib import Path
+
 import numpy as np
 
 import config
@@ -59,7 +62,7 @@ def chunk_text(text, size=None, overlap=None):
     overlap = config.CHUNK_OVERLAP if overlap is None else overlap
     if overlap >= size:
         raise ValueError("CHUNK_OVERLAP must be smaller than CHUNK_SIZE")
-    # SOLUTION START: TODO (Session 1): cut `text` into chunks of `size` characters that overlap by `overlap`
+    # SOLUTION START: TODO (Session 3): cut `text` into chunks of `size` characters that overlap by `overlap`
     chunks = []
     start = 0
     while True:
@@ -71,11 +74,50 @@ def chunk_text(text, size=None, overlap=None):
     # SOLUTION END
 
 
+HEADING = re.compile(r"^\s*(?:#{1,6}\s+(.+?)|=+\s*(.+?)\s*=+)\s*$")  # "## Refunds" or "== Refunds =="
+
+
+def split_sections(text):
+    """Split a text at its headings: [(heading, body), ...]. Text before the first heading has heading None."""
+    sections, heading, lines = [], None, []
+    for line in text.splitlines():
+        match = HEADING.match(line)
+        if match:
+            sections.append((heading, "\n".join(lines)))
+            heading, lines = (match.group(1) or match.group(2)).strip(), []
+        else:
+            lines.append(line)
+    sections.append((heading, "\n".join(lines)))
+    return [(heading, body) for heading, body in sections if body.strip()]
+
+
+def chunk_by_section(doc):
+    """One chunk per section, each starting with its address, e.g. "01-05 attendance and withdrawal > Article nine: ...".
+    A section longer than CHUNK_SIZE characters is cut with chunk_text(), and every piece keeps the label."""
+    title = Path(doc["source"]).stem.replace("_", " ").capitalize()  # "01-05_Attendance_And_Withdrawal.md" -> "01-05 attendance and withdrawal"
+    chunks = []
+    for heading, body in split_sections(doc["text"]):
+        label = f"{title} > {heading}" if heading else title
+        chunks += [f"{label}: {piece}" for piece in chunk_text(body)]
+    return chunks
+
+
 def make_chunks(documents):
-    """Chunk every document. Each chunk remembers where it came from, e.g. id 'course_credit.txt#3'."""
+    """Chunk every document. Each chunk remembers where it came from, e.g. id '01-05_Attendance_And_Withdrawal.md#3'."""
+    # PLAY WITH THE CHUNKING: change these in config.py, then search again (get_store() rebuilds by itself).
+    #   CHUNK_BY_SECTION  False = a character window that ignores the document's structure (chunk_text)
+    #                     True  = one chunk per "## heading" section, with the heading in front (chunk_by_section)
+    #   CHUNK_SIZE        characters per window. With CHUNK_BY_SECTION = True, a section longer than this is
+    #                     cut into pieces. In data/kfupm_structured, 191 of 253 sections fit in 500 characters and
+    #                     the longest has 995, so CHUNK_SIZE = 1000 keeps every rule whole in one chunk.
+    #   CHUNK_OVERLAP     characters two neighbouring windows share, so a sentence cut at a border survives.
+    #   CORPUS_DIR        data/kfupm_structured (sections) or data/kfupm_raw (one plain dump of the same text).
+    # Try: raw + windows, structured + windows, structured + sections; then CHUNK_SIZE 100 vs 2000.
+    # Compare which chunk search() puts first for the same question.
     chunks = []
     for doc in documents:
-        for number, text in enumerate(chunk_text(doc["text"]), start=1):
+        pieces = chunk_by_section(doc) if config.CHUNK_BY_SECTION else chunk_text(doc["text"])
+        for number, text in enumerate(pieces, start=1):
             chunks.append({"id": f"{doc['source']}#{number}", "source": doc["source"], "text": text})
     return chunks
 
@@ -119,17 +161,19 @@ def build_store(documents=None):
     else:
         print("faiss is not installed: using plain numpy search instead (same results)")
         index = NumpyIndex(vectors)
-    print(f"Indexed {len(chunks)} chunks (CHUNK_SIZE={config.CHUNK_SIZE}, CHUNK_OVERLAP={config.CHUNK_OVERLAP})")
+    print(f"Indexed {len(chunks)} chunks (CHUNK_SIZE={config.CHUNK_SIZE}, CHUNK_OVERLAP={config.CHUNK_OVERLAP}, "
+          f"CHUNK_BY_SECTION={config.CHUNK_BY_SECTION})")
     return {"index": index, "chunks": chunks, "settings": _settings()}
 
 
 def _settings():
-    return config.CHUNK_SIZE, config.CHUNK_OVERLAP, config.EMBEDDING_MODEL, str(config.CORPUS_DIR)
+    return (config.CHUNK_SIZE, config.CHUNK_OVERLAP, config.CHUNK_BY_SECTION,
+            config.EMBEDDING_MODEL, str(config.CORPUS_DIR))
 
 
 def get_store(rebuild=False):
     """The store for the corpus in config.py: built the first time, then reused.
-    It is rebuilt automatically if you change CHUNK_SIZE, CHUNK_OVERLAP, EMBEDDING_MODEL or CORPUS_DIR,
+    It is rebuilt automatically if you change CHUNK_SIZE, CHUNK_OVERLAP, CHUNK_BY_SECTION, EMBEDDING_MODEL or CORPUS_DIR,
     and when you ask for it with rebuild=True (e.g. after changing the documents)."""
     global _store
     if rebuild or _store is None or _store["settings"] != _settings():
@@ -144,7 +188,7 @@ def search(store, query, k=None):
     k = k or config.TOP_K
     if store["settings"] != _settings():
         print("Warning: chunk/model/corpus settings changed since build_store(). Run build_store() again.")
-    # SOLUTION START: TODO (Session 1): embed the query, ask store["index"] for the k best rows, return those chunks with their scores
+    # SOLUTION START: TODO (Session 3): embed the query, ask store["index"] for the k best rows, return those chunks with their scores
     scores, rows = store["index"].search(embed([query]), k)
     results = []
     for score, row in zip(scores[0], rows[0]):
