@@ -38,9 +38,9 @@ def read_file(path):
 
 
 def load_documents(corpus_dir=None):
-    """Read every document in <corpus>/docs that read_file() understands (.txt, .md, .pdf).
+    """Read every document in the corpus folder (config.CORPUS_DIR) that read_file() understands (.txt, .md, .pdf).
     Returns a list of {"source": file name, "text": the whole text}."""
-    folder = (corpus_dir or config.CORPUS_DIR) / "docs"
+    folder = corpus_dir or config.CORPUS_DIR
     documents, skipped = [], []
     for path in sorted(folder.iterdir()):
         text = read_file(path)
